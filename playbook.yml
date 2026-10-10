@@ -1,0 +1,44 @@
+- hosts: minecraft
+  tasks:
+    - name: Install docker
+      ansible.builtin.apt:
+        name: [docker.io, docker-compose-v2]
+        update_cache: true
+
+    - name: Enable docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create project dir
+      ansible.builtin.file:
+        path: /opt/minecraft
+        state: directory
+
+    - name: Copy compose file
+      ansible.builtin.copy:
+        src: files/compose.yml
+        dest: /opt/minecraft/compose.yml
+
+    - name: Run minecraft
+      community.docker.docker_compose_v2:
+        project_src: /opt/minecraft
+
+    - name: Wait for bluemap config
+      ansible.builtin.wait_for:
+        path: /opt/minecraft/data/config/bluemap/core.conf
+        timeout: 300
+
+    - name: Accept bluemap resource download
+      ansible.builtin.lineinfile:
+        path: /opt/minecraft/data/config/bluemap/core.conf
+        regexp: '^accept-download:'
+        line: 'accept-download: true'
+      notify: Restart minecraft
+
+  handlers:
+    - name: Restart minecraft
+      community.docker.docker_compose_v2:
+        project_src: /opt/minecraft
+        state: restarted

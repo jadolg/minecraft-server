@@ -1,0 +1,7 @@
+[tools]
+"pipx:ansible-core" = "latest"
+python = "3.13"
+uv = "latest"
+
+[tasks.deploy]
+run = "ansible-galaxy collection install -r requirements.yml && ansible-playbook playbook.yml"
